@@ -1,0 +1,35 @@
+name: Model Validation and Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Validation Job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install dvc mlflow
+
+      - name: Pull Data
+        run: dvc pull || echo "No DVC remote configured, proceeding anyway."
+
+      - name: Train Model
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: python train.py
+
+      - name: Upload Run ID Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-info
+          path: model_info.txt
