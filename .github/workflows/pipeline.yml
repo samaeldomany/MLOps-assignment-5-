@@ -18,7 +18,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install Dependencies
-        run: pip install dvc mlflow
+        run: pip install -r requirements.txt
 
       - name: Pull Data
         run: dvc pull || echo "No DVC remote configured, proceeding anyway."
