@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score
 df = pd.read_csv('data.csv')
 X = df.drop('target', axis=1)
 y = df['target']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.99, random_state=1)
 
 with mlflow.start_run() as run:
     model = RandomForestClassifier(n_estimators=1, max_depth=1)
