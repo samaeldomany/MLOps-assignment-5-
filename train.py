@@ -11,7 +11,7 @@ y = df['target']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.99, random_state=1)
 
 with mlflow.start_run() as run:
-    model = RandomForestClassifier(n_estimators=1, max_depth=1)
+    model = RandomForestClassifier(n_estimators=1, max_depth=1, max_leaf_nodes=2)
     model.fit(X_train, y_train)
     
     acc = accuracy_score(y_test, model.predict(X_test))
