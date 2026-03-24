@@ -25,6 +25,8 @@ jobs:
       - name: Train
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         run: python train.py 
 
       - name: Persist Run ID
@@ -54,10 +56,12 @@ jobs:
       - name: Check Accuracy
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         run: python check_threshold.py
 
       - name: Mock Docker Build
         run: |
           RUN_ID=$(cat model_info.txt)
           echo "Building image for: $RUN_ID"
-          docker build --build-arg RUN_ID=$RUN_ID -t my-model:latest . 
+          docker build --build-arg RUN_ID=$RUN_ID -t my-model:latest .
