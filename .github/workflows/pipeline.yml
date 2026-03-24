@@ -1,35 +1,64 @@
-name: Model Validation and Deployment
-
-on:
-  push:
-    branches: [ main ]
+name: MLOps Assignment 5
+on: [push] 
 
 jobs:
-  validate:
-    name: Validation Job
+  validate: 
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      - name: Set up Python
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Configure DVC Remote
+        run: |
+          dvc remote add -d storage s3://dvc
+          dvc remote modify storage endpointurl https://dagshub.com/samaeldomanyy/MLOps-assignment-5-.s3
+          dvc remote modify storage access_key_id ${{ secrets.DAGSHUB_ACCESS_KEY_ID }}
+          dvc remote modify storage secret_access_key ${{ secrets.DAGSHUB_SECRET_ACCESS_KEY }}
+
+      - name: Pull Data
+        run: dvc pull 
+
+      - name: Train
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: python train.py 
+
+      - name: Persist Run ID
+        uses: actions/upload-artifact@v4 
+        with:
+          name: model-metadata
+          path: model_info.txt
+
+  deploy: 
+    needs: validate 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Pull Data
-        run: dvc pull || echo "No DVC remote configured, proceeding anyway."
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: model-metadata
 
-      - name: Train Model
+      - name: Check Accuracy
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-        run: python train.py
+        run: python check_threshold.py
 
-      - name: Upload Run ID Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: model-info
-          path: model_info.txt
+      - name: Mock Docker Build
+        run: |
+          RUN_ID=$(cat model_info.txt)
+          echo "Building image for: $RUN_ID"
+          docker build --build-arg RUN_ID=$RUN_ID -t my-model:latest . 
